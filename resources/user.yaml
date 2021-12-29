@@ -1,0 +1,66 @@
+constants:
+  some_data:
+    value: "{uuid}"
+variables:
+  user_id:
+    value: "{uuid}"
+operations:
+  - name: "users_insert"
+    database: "users"
+    operation: "insert"
+    table: "users"
+    data:
+      id:
+        value: "{variable[user_id]}"
+        type: text
+      create_timestamp:
+        value: "{now}"
+        type: timestamptz
+  - name: "user_group_associations_insert"
+    database: "users"
+    operation: "insert"
+    table: "user_group_associations"
+    data:
+      id:
+        value: "{resource[user_group][user_group_insert][id]}"
+        type: text
+      create_timestamp:
+        value: "{now}"
+        type: timestamptz
+  - name: "user_statuses_insert"
+    database: "users"
+    operation: "insert"
+    table: "user_statuses"
+    data:
+      id:
+        value: "{uuid}"
+        type: text
+      user_id:
+        value: "{users_insert[id]}"
+        type: text
+      create_timestamp:
+        value: "{now}"
+        type: timestamptz
+      status:
+        value: "1"
+        type: bigint
+  - name: "users_update_status"
+    database: "users"
+    operation: "update"
+    table: "users"
+    data:
+      update_id:
+        value: "{user_statuses_insert[id]}"
+        type: text
+    where:
+      id:
+        value: "{variable[user_id]}"
+        type: text
+  - name: "other_db_insert"
+    database: "user_groups"
+    operation: "insert"
+    table: "otherdb"
+    data:
+      id:
+        value: "{uuid}"
+        type: text

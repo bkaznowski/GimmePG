@@ -1,0 +1,15 @@
+variables:
+    user_group_id:
+      value: "{uuid}"
+operations:
+    - name: "user_group_insert"
+      database: "user_groups"
+      operation: "insert"
+      table: "user_groups"
+      data:
+        id:
+          value: "{variable[user_group_id]}"
+          type: text
+        create_timestamp:
+          value: "{now}"
+          type: timestamptz
