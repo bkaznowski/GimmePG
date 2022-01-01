@@ -2,3 +2,5 @@
 databases:
   - name: users
     dsn: "postgres://postgres:mysecretpassword@localhost:5432"
+  - name: user_groups
+    dsn: "postgres://postgres:mysecretpassword@localhost:5432"
