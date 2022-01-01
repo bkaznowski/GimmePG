@@ -1,5 +1,7 @@
+from copy import deepcopy
 import functools
 import logging
+import random
 import uuid
 from string import Formatter
 from datetime import datetime
@@ -11,6 +13,30 @@ from query_builder import build_query
 
 def flatten(t):
     return [item for sublist in t for item in sublist]
+
+
+def convert_type(value, type):
+    if type == "text":
+        return value
+    if type == "timestamptz":
+        # Use fromisoformat instead of datetime.strptime(value, "%Y-%m-%d %H:%M:%S.%f").
+        # It is much faster
+        return datetime.fromisoformat(value)
+    if type == "bigint":
+        return int(value)
+
+
+def flatten_object(o, count):
+    if isinstance(o, list):
+        return o
+    if not isinstance(o, dict):
+        raise Exception("unexpected type")
+    results = [{} for _ in range(count)]
+    for k, v in o.items():
+        objects = flatten_object(v, count)
+        for i, object in enumerate(objects):
+            results[i][k] = object
+    return results
 
 
 async def create_worker(databases, resources):
@@ -138,7 +164,6 @@ class Worker:
             operation_results={},
         )
 
-    @with_new_transactions
     async def create_resources(
         self, resource_name, count, batch_size, show_all_queries
     ):
@@ -156,6 +181,7 @@ class Worker:
                 constants=constants,
             )
 
+    @with_new_transactions
     async def _create_resources(
         self, resource_name, count, show_all_queries, constants
     ):
@@ -183,7 +209,11 @@ class Worker:
         operation_results,
     ):
         if parameter_name == "uuid":
-            return [str(uuid.uuid4()) for _ in range(count)]
+            # using custom method for uuids as it is much faster than str(uuid.uuid4()) and
+            # should be good enough for what is needed
+            return [
+                uuid.UUID(int=random.getrandbits(128), version=4) for _ in range(count)
+            ]
         elif parameter_name == "now":
             return [datetime.utcnow()] * count
         elif parameter_name.startswith("resource"):
@@ -227,27 +257,13 @@ class Worker:
                     operation_results,
                 )
             formatted_values = []
+            all_values = flatten_object(values, count)
             for i in range(count):
-                all_values = flatten_object(values, i)
-                formatted_values.append(value.format(**all_values))
-            formatted_data[column_name] = convert_types(
-                formatted_values, column_value.get("type", "text")
-            )
+                formatted_values.append(
+                    convert_type(
+                        value.format(**all_values[i]), column_value.get("type", "text")
+                    )
+                )
+
+            formatted_data[column_name] = formatted_values
         return formatted_data
-
-
-def convert_types(values, type):
-    if type == "text":
-        return values
-    if type == "timestamptz":
-        return [datetime.strptime(value, "%Y-%m-%d %H:%M:%S.%f") for value in values]
-    if type == "bigint":
-        return [int(value) for value in values]
-
-
-def flatten_object(o, element):
-    if isinstance(o, list):
-        return o[element]
-    if not isinstance(o, dict):
-        raise Exception("unexpected type")
-    return {k: flatten_object(v, element) for k, v in o.items()}
