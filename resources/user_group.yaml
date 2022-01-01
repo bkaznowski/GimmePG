@@ -3,7 +3,7 @@ variables:
       value: "{uuid}"
 operations:
     - name: "user_group_insert"
-      database: "user_groups"
+      database: "users"
       operation: "insert"
       table: "user_groups"
       data:

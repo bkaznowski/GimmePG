@@ -103,7 +103,13 @@ class Worker:
     async def execute_operation(
         self, operation, count, show_query, constants, variables, operation_results
     ):
-        query = build_query(operation, count)
+        query = build_query(
+            table_name=operation["table"],
+            data_column_names=tuple(operation["data"].keys()),
+            operation_type=operation["operation"],
+            where_column_names=tuple(operation.get("where", [])),
+            count=count
+        )
         query_parameters = await self._derive_query_parameters(
             data=operation["data"],
             count=count,

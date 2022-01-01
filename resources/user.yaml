@@ -57,7 +57,7 @@ operations:
         value: "{variable[user_id]}"
         type: text
   - name: "other_db_insert"
-    database: "user_groups"
+    database: "users"
     operation: "insert"
     table: "otherdb"
     data:
