@@ -52,9 +52,8 @@ class Worker:
 
     async def _init(self, databases):
         self.connections = {}
-        for database in databases:
-            dsn = database["dsn"]
-            self.connections[database["name"]] = await asyncpg.connect(dsn)
+        for database_name, kwargs in databases.items():
+            self.connections[database_name] = await asyncpg.connect(**kwargs)
 
     def with_new_transactions(func):
         @functools.wraps(func)
@@ -180,6 +179,7 @@ class Worker:
                 resources_left if resources_left < batch_size else batch_size
             )
             resources_left = resources_left - current_batch_size
+            # TODO maybe this can be moved so it awaits after dispatching everything?
             await self._create_resources(
                 resource_name=resource_name,
                 count=current_batch_size,

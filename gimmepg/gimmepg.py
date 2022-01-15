@@ -10,12 +10,13 @@ from resources import Resources
 
 
 class GimmePG:
-    def __init__(self, resource_path):
+    def __init__(self, resource_path=None, resource_yamls=None):
         self.workers = []
-        self.resources = Resources(resource_path)
+        self.resources = Resources(resource_path, resource_yamls)
 
-    async def _init(self, connections, database_path):
-        databases = self.load_databases(database_path)
+    async def _init(self, connections, database_path=None, databases=None):
+        if database_path:
+            databases = self.load_databases(database_path)
         group_task = asyncio.gather(
             *[create_worker(databases, self.resources) for _ in range(connections)]
         )
@@ -36,7 +37,7 @@ class GimmePG:
             return yaml.safe_load(stream)["databases"]
 
     async def create_resources(
-        self, resource_name, count, batch_size, show_all_queries
+        self, resource_name, count, batch_size, show_all_queries=False
     ):
         number_per_group = math.floor(count / len(self.workers))
         remainder = count % len(self.workers)
@@ -54,9 +55,9 @@ class GimmePG:
         await group_task
 
 
-async def create_gimme_pg(connections, database_path, resource_path):
-    gimme_pg = GimmePG(resource_path)
-    await gimme_pg._init(connections, database_path)
+async def create_gimme_pg(connections, database_path=None, resource_path=None, databases=None, resource_yamls=None):
+    gimme_pg = GimmePG(resource_path, resource_yamls)
+    await gimme_pg._init(connections, database_path, databases)
     return gimme_pg
 
 
