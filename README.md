@@ -46,6 +46,8 @@ You can use GimmePG as a standalone binary.
 You can use GimmePG as a binary for more flexibility. This allows you to use the data output from it for other steps in your testing pipeline.
 
 ```python
+import asyncio
+
 from gimmepg import create_gimme_pg
 
 user_group_yaml = """variables:
@@ -81,7 +83,7 @@ async def main():
         "user_group": user_group_yaml
     }
 
-    gimme_pg = await create_gimme_pg(connections, databases=databases, resource_yamls=resource_yamls)
+    gimme_pg = await create_gimme_pg(5, databases=databases, resource_yamls=resource_yamls)
     await gimme_pg.create_resources(
         resource_name="user_group",
         count=1000,
